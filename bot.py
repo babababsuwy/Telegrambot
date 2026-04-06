@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8312816041:AAEbj7A1ayHm9c1tD6yxAmMX8cfJCUaUpv8")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8312816041:AAGZOlwM36IJiUuJT2901SFGRAUT8VgUsb0")
 PORT = int(os.environ.get("PORT", 8080))
 
 app = Flask(__name__)
@@ -566,13 +566,21 @@ async def simulate_transaction_check(context: ContextTypes.DEFAULT_TYPE, chat_id
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    data = query.data
+
+    if data.startswith("purchase_"):
+        await query.answer("⚠ Insufficient balance, please deposit", show_alert=True)
+        return
+
+    if data.startswith("outofstock_"):
+        await query.answer("Sorry, the card is out of stock ⚠", show_alert=True)
+        return
+
     await query.answer()
 
     if await is_update_time():
         await query.edit_message_text("The bot is currently updating, please wait")
         return
-
-    data = query.data
 
     if data.startswith("page_"):
         parts = data.split("_")
@@ -627,12 +635,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "withdraw_cancel":
         await query.delete_message()
-
-    elif data.startswith("purchase_"):
-        await query.answer("Insufficient balance, please deposit", show_alert=True)
-
-    elif data.startswith("outofstock_"):
-        await query.answer("out of stock", show_alert=True)
 
     elif data.startswith("card_"):
         card_num = data.replace("card_", "")
